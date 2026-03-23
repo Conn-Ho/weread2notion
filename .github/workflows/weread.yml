@@ -2,6 +2,15 @@ name: weread sync
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: '强制重新同步所有书'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     - cron: "0 21 * * *"
 jobs:
@@ -30,7 +39,11 @@ jobs:
           pip install -r requirements.txt
       - name: weread sync
         run: |
-          python scripts/weread.py
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            python scripts/weread.py --force
+          else
+            python scripts/weread.py
+          fi
       - name: push
         run: |
           git config --local user.email "action@github.com"
