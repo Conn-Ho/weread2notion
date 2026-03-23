@@ -1,0 +1,30 @@
+name: refresh weread cookie
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 */3 * *"  # 每3天北京时间02:00 (UTC 18:00)
+
+jobs:
+  refresh:
+    name: Refresh Cookie
+    runs-on: ubuntu-latest
+    env:
+      WEREAD_COOKIE: ${{ secrets.WEREAD_COOKIE }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install playwright PyNaCl requests
+          playwright install chromium --with-deps
+
+      - name: Refresh cookie
+        run: python scripts/refresh_cookie.py
