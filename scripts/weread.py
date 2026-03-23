@@ -182,11 +182,13 @@ def insert_to_notion(bookName, bookId, cover, sort, author, isbn, rating, catego
 
 
 def add_children(id, children):
+    if not children:
+        return []
     results = []
-    for i in range(0, len(children) // 100 + 1):
+    for i in range(0, len(children), 100):
         time.sleep(0.3)
         response = client.blocks.children.append(
-            block_id=id, children=children[i * 100 : (i + 1) * 100]
+            block_id=id, children=children[i : i + 100]
         )
         results.extend(response.get("results"))
     return results if len(results) == len(children) else None
@@ -388,6 +390,7 @@ def extract_page_id():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true", help="强制重新同步所有书（忽略 latest_sort）")
     options = parser.parse_args()
     weread_cookie = get_cookie()
     database_id = extract_page_id()
@@ -396,7 +399,7 @@ if __name__ == "__main__":
     session.cookies = parse_cookie_string(weread_cookie)
     client = Client(auth=notion_token, log_level=logging.ERROR)
     session.get(WEREAD_URL)
-    latest_sort = get_sort()
+    latest_sort = 0 if options.force else get_sort()
     books = get_notebooklist()
     if books != None:
         for index, book in enumerate(books):
