@@ -59,14 +59,13 @@ def get_bookmark_list(bookId):
     params = dict(bookId=bookId)
     r = session.get(WEREAD_BOOKMARKLIST_URL, params=params)
     if r.ok:
-        print(r.json())
-        updated = r.json().get("updated")
+        updated = r.json().get("updated") or []
         updated = sorted(
             updated,
-            key=lambda x: (x.get("chapterUid", 1), int(x.get("range").split("-")[0])),
+            key=lambda x: (x.get("chapterUid", 1), int(x.get("range", "0-0").split("-")[0] or 0)),
         )
-        return r.json()["updated"]
-    return None
+        return updated
+    raise Exception(f"get_bookmark_list failed: {r.status_code}")
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
 def get_read_info(bookId):
@@ -75,7 +74,7 @@ def get_read_info(bookId):
     r = session.get(WEREAD_READ_INFO_URL, params=params)
     if r.ok:
         return r.json()
-    return None
+    raise Exception(f"get_read_info failed: {r.status_code}")
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
 def get_bookinfo(bookId):
@@ -131,7 +130,7 @@ def get_chapter_info(bookId):
     ):
         update = r.json()["data"][0]["updated"]
         return {item["chapterUid"]: item for item in update}
-    return None
+    return {}
 
 
 def insert_to_notion(bookName, bookId, cover, sort, author, isbn, rating, categories):
